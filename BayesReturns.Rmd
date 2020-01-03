@@ -1,0 +1,71 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(bayesm)
+```
+
+
+```{r}
+xydata<-read.csv("xydata.csv")
+xydata
+(newchoice<-read.csv("newchoice.csv"))
+```
+
+```{r}
+xydata$ID<-as.factor(xydata$ID)
+newchoice$ID<-as.factor(newchoice$ID)
+nlevels(newchoice$ID)
+```
+
+
+```{r}
+N <- nlevels(xydata$ID)
+dat <- vector(mode = "list", length = N)
+for (i in 1:N) {
+  dat[[i]]$y <- newchoice[newchoice$ID==levels(newchoice$ID)[i], "Choice"]
+  dat[[i]]$X <- as.matrix(xydata[xydata$ID==levels(xydata$ID)[i],3:18])
+}
+```
+
+
+```{r}
+dat[[1]]
+```
+
+```{r}
+data(camera)
+camera[[1]]$X
+```
+
+
+```{r}
+data  <- list(lgtdata = dat, p = 7)
+prior <- list(ncomp = 1, SignRes=c(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-1))
+mcmc  <- list(R = 75000, nprint = 0)
+
+out <- rhierMnlRwMixture(Data = data, Prior = prior, Mcmc = mcmc)
+```
+
+```{r}
+out$betadraw[,,2]
+```
+
+
+```{r}
+sum_range=matrix(data=0, nrow=224, ncol=16)
+for (i in 70001:75000){
+  sum_range=sum_range + out$betadraw[,,i]
+}
+
+Avg_sum=sum_range/5000
+  
+```
+
+
+```{r}
+write.csv(Avg_sum, "betacoeff.csv")
+```
